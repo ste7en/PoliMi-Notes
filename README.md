@@ -9,3 +9,4 @@ Appunti e dispense di alcuni corsi di Ingegneria Informatica al Politecnico di M
 
 ## Terzo anno
 * [Fondamenti di Elettronica](./Elettronica/Teoria) - Prof. Marco Carminati
+* [Ingegneria del Software](./Ingegneria%20del%20Software) - Prof. Pierluigi San Pietro
