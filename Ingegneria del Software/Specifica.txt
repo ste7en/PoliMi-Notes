@@ -1,0 +1,267 @@
+• Specifica di astrazioni funzionali e procedurali
+La specifica è la descrizione di un frammento di codice, che prescinde dall'implementazione. Rappresenta la classe d'equivalenza di tutte le implementazioni possibili e infatti è indipendente da come il metodo esegue un determinato comportamento.
+
+• Astrazione procedurale
+Definisce, tramite una specifica, un'operazione complessa su dati generici (o parametri).
+
+- Specifica delle astrazioni procedurali
+
+La "precondizione (o requires)" sono le condizioni sui parametri sotto le quali la specifica è definita.
+La "postcondizione (o ensures)" è l'effetto garantito al termine dell'esecuzione dell'astrazione, sotto l'ipotesi che la precondizione sia verificata.
+
+La precondizione deve essere sempre verificata, quindi qualunque comportamento deve essere considerato.
+
+Notazione:
+@assignable + nome dei parametri locali mutabili
+@requires + le precondizioni
+@ensures + la postcondizione
+@signals (ExceptionType e) + la condizione che lancia l'eccezione
+\result fa riferimento al valore ritornato dalla procedura
+@helper marca un metodo come helper method
+@pure marca un metodo come puro
+
+Occorre prevedere una clausola signal per ogni eccezione che il metodo può lanciare (sia checked the unchecked), altrimenti è come scrivere una signals con una post-condizione true.
+
+JML è rappresentata nei commenti con la sintassi: ' //@ '
+Le asserzioni JML sono espressioni booleane Java che non possono avere side-effect e perciò possono solo chiamare metodi puri (senza s.e.).
+
+In JML sono usate anche alcune estensioni della logica e di Java, come:
+\result va nella clausola @ensures
+\forall
+* this is a comment * i commenti sono sempre true
+==> (implica), <==> (sse), \old(element)
+&&
+
+@ assignable <variable> -  segnala che un parametro può essere modificato
+@ assignable \nothing   -  segnala che un metodo non ha side-effects
+
+- Progettare astrazioni procedurali
+Le specifiche devono essere il più generali possibile, è consigliabile usare la parametrizzazione. Inoltre, la specifica deve lasciare la massima libertà implementativa possibile. Perciò se è troppo dettagliata vincola l'implementatore e se è troppo generica ne limita l'utilità.
+
+- Semantica delle signals
+
+   //@ ensures A
+   //@ signals (E e) B
+
+Equivale alla scrittura "//@ A && (*nessuna eccezione*) || B && (*lancia eccezione e*)" e quindi è compito di chi scrive la JML di distinguere i due casi, che devono essere mutuamente esclusivi.
+
+La procedura è detta parziale se le sua precondizione non è vuota, perciò avrà un comportamento specificato solo per un sottoinsieme del dominio degli argomenti. Questo compromette la robustezza del programma e, in più, non definisce cosa avviene nel caso di parametri non validi.
+Se un metodo non è definito per alcuni valori, per ottenere delle procedure totali si usano le signals e un'eccezione è lanciata quando la requires è violata.
+È buona norma quindi eliminare la clausola requires e lanciare eccezioni quando la requires è violata. In genere, non si lancia un'eccezione quando il chiamante può fare il controllo della precondizione molto meglio del chiamato o quando il controllo è inefficiente, ma questo indebolisce la robustezza del programma.
+
+– Quantificatori in JML
+Per parlare degli elementi di una collezione, si possono usare i metodi pubblici che non hanno side effects:
+equals, contains, containsAll, get, sublist
+Inoltre, JML supporta diversi quantificatori:
+• \forall and \exists (universali)
+   (\forall <variabile>; range; condizione)
+   es. (\forall int i; 0<=i && i< a.length-1; a[i]<=a[i+1]) per un ordinamento crescente
+
+   (\exists <condizione da valutare>) ? true statement : false statement
+
+• \sum, \product, \min, \max (funzionali)
+   (\operatore int i; 0 <= i && i < 5; i)
+
+• \num_of (quantificatore numerico)
+   (\num_of int i; P(i); Q(i)) è il numero totale (cardinalità) di i per cui vale P(i) && Q(i)
+   Esempio: nessun elemento di a compare più di due volte in a
+   (\forall int i; 0<=i && i<a.length;
+      ( \numof int j; i<j && j<a.length; a[i]==a[j] ) <=1) );
+
+– Esempio col metodo sort (no elementi ripetuti + permutazione)
+/* @ requires a != null &&
+   @ (\forall int i; 0<=i && i<a.length;
+   @ (\forall int j; i<j && j<a.length; a[i]!=a[j]));
+   @ ensures
+   @ (\forall int i; 0<=i && i<a.length;
+   @ (\exists int j; 0<=j && j<a.length; a[i]==\old(a[j])) @ &&
+   @ (\exists int h; 0<=h && h<a.length; \old(a[i])==a[h]) @)
+   @ && (\forall int i; 0<=i && i<a.length-1; a[i] <= a[i+1]);
+   @ assignable a[*];
+   @*/
+public static void sort (int[] a) { ... }
+
+- Esempio col metodo sort (con ripetizioni)
+   //@ requires a!=null
+   //@ ensures
+   //@ (\forall int i; 0<=i && i<a.length;
+   //@
+   //@
+   //@
+   //@ ) &&
+   //@ (\forall int i; 0<=i && i<a.length-1; a[i]<=a[i+1]);
+   //@ assignable a[*];
+public static void sort (int[] a) { ... }
+
+
+• Specifica di astrazioni sui dati
+Per descrivere un nuovo tipo di dato, indicando valori e operazioni possibili. Tipo di dato astratto o ADT.
+
+L'invocazione di un'operazione produce un output e/o cambiamento di stato dell'oggetto a cui si applica. I metodi agiscono sulle variabili di stato.
+Nelle precondizioni e postcondizioni di un metodo pubblico possono comparire solo elementi pubblici del metodo e della classe.
+
+• Definizione di metodo puro
+Un metodo (non statico) è puro se non ha effetti collaterali. Quindi @assignable vale nothing e il metodo va chiamato @pure per essere richiamato in JML, stessa cosa per i costruttori, che possono essere puri.
+Un metodo puro può solo chiamare altri metodi puri e metodi statici non possono essere dichiarati puri.
+es. di metodo puro è size()
+
+- Categorie di operazioni
+   > Creatori - producono nuovi oggetti
+   > Produttori - dati in input oggetti del proprio tipo, creano alti oggetti del proprio tipo
+   > Modificatori - modificano oggetti del proprio tipo
+   > Osservatori - dati in input oggetti del proprio tipo restituiscono risultati di altri tipi
+Un tipo con modificatori è un tipo mutabile, altrimenti è immutabile.
+In generale lo stato concreto degli oggetti della classe non è visibile (se gli attributi sono privati), e non deve essere usato nella specifica. Invece lo stato astratto è osservabile attraverso metodi observer puri e quindi usabile nella specifica. Ma spesso gli observer non sono sufficienti a descrivere pre/post/...
+
+Per colmare i limiti degli osservatori e formalizzare la specifica si fa ricorso all'oggetto astratto tipico (OAT), che definisce in modo preciso l’oggetto astratto definito dalla specifica della classe (di solito è una lista, un set o una stringa).
+
+Un tipo è adeguato se fornisce operazioni sufficienti perché il tipo possa essere utilizzato semplicemente ed efficientemente.
+
+Nella dichiarazione della classe si specifica l'OAT con //@ spec_public T oat;
+- esempio con la Pila
+public class Pila<T> {
+   //@ spec_public List<T> oat;
+   // Oggetto tipico OAT e’<x_1, x_2, ..., x_n>, n>=0, x_i in T, x_n è il top
+
+   //@ ensures size()==\old(size()+1) && top()==x &&
+   //@ \old(oat).equals(oat.sublist(0, oat.size()-2));
+   public void push(T x) {...}
+
+   //@ requires size()>0;
+   //@ ensures size()==\old(size()-1) &&
+   //@ oat.equals(\old(oat.sublist(0, oat.size()-2))
+   public void pop(){...}
+}
+Da notare le operazioni di sublist per mostrare che il contenuto della pila precedente alla rimozione o inserimento è rimasto invariato, eccetto per il valore rimosso/inserito.
+
+Un OAT è adeguato se sono disponibili almeno creatori, osservatori e modificatori (se mutabile) o produttori (se immutabile), in più deve essere totalmente popolato, ottenibile con i produttori. Inoltre non bisogna includere troppe operazioni che non si adattano allo scopo del tipo, altrimenti l'astrazione diventa difficile da comprendere.
+
+- Proprietà astratte (osservabili con i metodi observer)
+   > Proprietà evolutiva: relazione fra uno strato astratto osservabile e lo stato astratto osservabile successivo.
+   > Proprietà invariante: proprietà degli stati astratti osservabili, rappresentabili in JML con public invariant (es. size() di un IntSet è sempre >=0)
+
+- Invarianti astratti: ignorando l'implementazione la specifica formalizza una proprietà astratta. Un abstract invariant è una condizione che deve essere sempre verificata per l'oggetto astratto.
+In JML:  //@ public invariant
+         //@ condizione1 && condizione2 || condizione3;
+Queste proprietà possono essere usate dagli utilizzatori della classe per fare assunzioni sul comportamento della classe.
+Affinché le proprietà astratte siano davvero utili, bisogna essere sicuri che gli invarianti siano davvero verificati. Questo può essere garantito dalla specifica del costruttore che garantisce la correttezza dell'invariante e, poichè la classe è immutabile, non può essere modificato. LE PROPRIETA' INVARIANTI NON POSSONO DESCRIVERE PROPRIETA' EVOLUTIVE.
+
+• Le classi non pure
+L'invariante deve valere, oltre che al termine del costruttore, anche al momento della chiamata di ciascun mutatore e al suo termine.
+
+
+• Implementazione delle astrazioni
+L'implementazione di un oggetto astratto descrive un oggetto concreto. Le eventuali modifiche al codice potrebbero modificare, per esigenze implementative, la struttura dati dell’oggetto concreto, ma lascerebbero immutato l’oggetto astratto.
+
+L'implementazione di un tipo deve fornire una rappresentazione (rep) per gli oggetti del tipo, una struttura dati, instance variables private, che ne rappresentino i valori.
+La scelta del rep dipende da efficienza, semplicità, riuso di strutture dati esistenti. Tipicamente, se esistono più rappresentazioni alternative, conviene realizzare quelle più efficienti per le operazioni più frequenti.
+
+
+• Relazioni fra astrazione e implementazione
+- Funzione di astrazione AF: associa uno stato concreto del rep ad uno ed un solo stato astratto
+Definisce il significato della rappresentazione, cioè stabilisce come ogni oggetto implementa un oggetto dell'astrazione. La AF si può specificare con un invariante private, che è quindi autorizzato a usare anche le parti private (metodi puri e attributi) della classe.
+Esempio: IntSet
+/* @private invariant
+   @ (\forall int i; ; this.isIn(i) <==>
+   @ arrayRep.contains(i))       arrayRep è un ArrayList che implementa IntSet
+   @*/
+È possibile implementare la AF con toString() ma non tutti gli oggetti concreti di una classe potrebbero essere rappresentanti legali (per cui valgono le ipotesi sottese all'implementazione) degli oggetti astratti (es. un IntSet implementato con ArrayList che memorizza anche duplicati).
+
+
+• Invariante di rappresentazione (rep invariant o RI)
+È un predicato logico su una proprietà (stato concreto) che tutti gli oggetti legali soddisfano. RI non specifica nulla sulla relazione fra oggetto astratto e concreto perchè è il compito di AF.
+Esempio: IntSet
+   //@ private invariant arrayRep != null &&         <––– private perchè riguarda
+   //@ !arrayRep.contains(null) &&                        solo l'implementazione
+   //@ (\forall int i; 0 <= i && i<arrayRep.size();
+   //@   (\forall int j; i < j && j<arrayRep.size();
+   //@     !(arrayRep.get(i).equals(arrayRep.get(j))));
+Il rep invariant va scritto prima di implementare qualunque operazione e si indica con private invariant. Nel rep invariant vanno scritte le proprietà che caratterizzano quegli stati concreti che rappresentano qualche stato astratto e, insieme ad AF, deve includere tutto ciò che serve per potere implementare i metodi, data la specifica.
+
+- Validità del RI
+Un metodo observer non può modificare il RI, che deve essere valido negli stati osservabili da un utilizzatore della classe.
+Il RI deve sempre valere all'uscita di un costruttore (a meno che non lanci un'eccezione) e, per ogni metodo, se è verificato al momento della chiamata lo deve essere anche all'uscita del metodo.
+Se RI non vale all'entrata di un metodo allora non si può garantire nulla, ma può non valere durante l'esecuzione di un metodo per poi essere verificato al ritorno al chiamante.
+
+- Quando verificare RI: quando si progetta il codice l'implementazione deve essere scritta in modo da conservare RI; più RI è preciso più probabile che l'implementazione sia corretta. RI spiega perchè le operazioni sono state implementate in quel modo e può essere usato in fase di test per verificare se un'implementazione rispetta il rep.
+RI definisce tutte le ipotesi sottostanti all'implementazione di un tipo, cioè per quali valori AF è definita: si può implementare con un repOK().
+
+• Ragionare sulle astrazioni
+Ci si deve convincere che il codice soddisfa la specifica degli oggetti astratti, verificabile in due passi:
+- mostrare che l'implementazione conserva il RI (oggetti ritornati dai costruttori e RI inalterato dai metodi)
+- mostrare che le operazioni sono corrette rispetto alla specifica dell'astrazione, eventualmente utilizzando il RI e proprietà dell'astrazione (mostrare che, dato RI, tutte le operazioni del rep implementano correttamente la specifica; avendo provato RI, si può ragionare per ogni operazione in modo indipendente)
+
+• Effetti collaterali benevoli
+Un'astrazione mutabile deve avere un rep mutabile, ma è possibile che il rep muti anche se l'oggetto astratto non cambia. Un'implementazione ha un effetto collaterale benevolo se modifica il rep senza influenzare lo stato astratto dell'oggetto.
+
+• Esporre parti mutabili del rep
+Un'implementazione espone il rep quando fornisce a utenti degli oggetti un modo per accedere a parti mutabili del rep. È un grave errore di implementazione ma piuttosto comune. Avviene o restituendo un riferimento a una componente mutabile del rep oppure inglobando nel rep un componente mutabile per cui esiste un riferimento all'esterno dell'oggetto. (soluzione veloce: restituire/inglobare una copia con clone; soluzione migliore nel caso di costruzione è verificare la validità)
+
+- Come non esporre il rep: dichiarare tutti gli attributi come private (al massimo protected o friendly) e se gli attributi riferiscono oggetti mutabili non restituirne reference ma creare copie, idem nel salvataggio.
+
+
+• Specifica di estensioni
+Estensione è il termine Java per ereditarietà.
+- Estensioni pure
+Un'estensione è detta pura se non modifica la specifica dei metodi ereditati. Quindi può solo estendere la specifica aggiungendo nuove operazioni oppure modificare l'implementazione dei metodi ereditati, a parità di specifica.
+AF di una sottoclasse di solito è uguale a quella della superclasse, così come è ereditato il RI, senza modifiche. Ma si può aggiungere un nuovo RI col costrutto @also
+Esempio: MaxIntSet
+   //@ also
+   //@ private invariant this.size > 0
+   //@ ==> this.isIn(this.biggest) &&
+   //@ (\forall int x; this.isIn(x); x <= this.biggest);
+
+- Estensioni non pure
+Un'estensione è detta non pura se modifica la specifica dei metodi ereditati.
+Esempio: SortedIntSet con un iteratore che restituisce elementi in ordine
+Le estensioni non pure di classi concrete andrebbero evitate o limitate.
+
+• Principio di sostituzione di Liskov
+Gli oggetti della sottoclasse devono rispettare il contratto della superclasse. Il contratto può essere esteso, ma non cambiato.
+Questo garantisce che moduli che usano oggetti di un tipo devono potere usare oggetti di un tipo derivato senza accorgersi della differenza, utilizzando con tranquillità polimorfismo e binding dinamico.
+
+• Regole per la specifica di sottoclassi
+Il principio di sostituzione impone un vincolo sulla specifica del sottotipo: deve essere compatibile con la specifica del supertipo. Si parla di equivalenza comportamentale tra superclasse e sottoclasse.
+Per la compatibilità, basta mostrare le tre proprietà:
+   - Regola della signature: un sottotipo deve avere tutti i metodi del supertipo e signature dei metodi del sottotipo devono essere compatibili
+      > garantisce che la sintassi della sottoclasse sia compatibile con la sintassi della superclasse
+      > garantisce type-safety
+   - Regola dei metodi: le chiamate ai metodi del sottotipo devono comportarsi come le chiamate ai metodi corrispondenti del supertipo
+      > verifica che il contratto dei singoli metodi ereditati sia compatibile con il contratto dei metodi originali (es. una estensione pura non cambia specifica)
+      > cambiare la specifica è ammesso se la precondizione è più debole (meno restrittivo) o se la postcondizione è più forte (più restrittivo, verificato in meno casi)
+         >> l'operatore logico per indicare che A è più forte di B è l'implicazione A ==> B, una relazione che confronta il valore di verità delle formule
+            >>> l'implicazione indebolisce (passare da B ad A ==> B, che è vera anche quando A è falsa)
+         >> la disgiunzione indebolisce
+         >> la congiunzione rafforza
+         Se la precondizione del metodo ridefinito è più debole di quella del metodo originale, allora tutti i casi in cui si chiamava il metodo originale si può chiamare anche il metodo ridefinito.
+            >>> Regola della precondizione: pre_super ==> pre_sub
+         Se la postcondizione del metodo ridefinito è più forte di quella del metodo originale, allora la postcondizione attesa dal chiamante sarà comunque verificata.
+            >>> Regola della post-condizione: post_sub ==> post_super
+
+         In JML una sottoclasse eredita pre e post condizioni dei metodi pubblici e protetti della superclasse e i suoi invarianti pubblici.
+         Per ridefinire la specifica JML, basta aggiungere //@also e le clausole aggiuntive sono interpretate in modo da rispettare la regola dei metodi.
+         La parte //@requires va in OR per risultare indebolita, la parte //@ensures è messa in AND per essere rafforzata.
+         La ridefinizione avrà la seguente specifica:
+               //@requires pre_super || pre_sub
+               //@ensures (\old(pre_super) ==> post_super)) &&
+               //@        (\old(pre_sub) ==> post_sub)
+         da notare che se volessi indebolire la postcondizione non potrei farlo in JML.
+         Inoltre, la regola della postcondizione più forte vale solo dove è verificata la precondizione originale.
+
+         Si può eliminare un'eccezione dalla signature solo se non è effettivamente usata o se il suo lancio è opzionale. Ma se questo comportasse l'indebolire la postcondizione allora la regola della postcondizione sarebbe violata.
+   - Regola delle proprietà: sottotipo deve preservare tutti i public invariant (le proprietà) degli oggetti del supertipo
+      > verifica che la specifica nel suo complesso sia compatibile con quella originale
+         >> occorre mostrare che tutti i metodi nuovi o ridefiniti, inclusi i costruttori, del sottotipo conservano le proprietà invarianti ed evolutive del supertipo, osservabili con metodi observer
+            >>> proprietà invariante: degli stati astratti, osservabili dalla sopraclasse
+               es. un tipo FatSet (come IntSet ma mai vuoto) non può essere sopraclasse di IntSet, perchè IntSet ne viola la proprietà
+            >>> proprietà evolutiva: relazione fra uno stato astratto osservabile e lo stato astratto osservabile successivo
+               es. un SimpleSet come IntSet ma senza remove: IntSet non può essere definito come estensione pura di SimpleSet aggiungendo remove, perché ne viola proprietà
+         >> nell'ambito dell'ereditarietà e delle collezioni, un tipo immutabile può essere definito come estensione di un tipo mutabile, ma un tipo mutabile non può avere un sottotipo mutabile che ne viola le condizioni
+
+Principio Open/Closed
+Un’estensione che rispetti tale principio aggiunge metodi nuovi ma non modifica il comportamento dei metodi esistenti.
+
+Consigli per usare ereditarietà:
+- NO basarsi sul riuso del codice
+- SI rispettare il principio di sostituzione
+   > l'ereditarietà non è un meccanismo di riuso del codice; la sottoclasse deve essere simile alla superclasse

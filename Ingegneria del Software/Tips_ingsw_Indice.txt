@@ -1,0 +1,34 @@
+Public invariant:
+   Tutte le condizioni e le proprietà della classe e dei suoi metodi, analizzando caso per caso. Non rappresenta le regole, ad esempio, di un gioco ma i valori ammissibili dei getter e/o setter.
+Rep invariant e AF:
+   Con RI definisci le cose che non variano degli attributi della classe e le condizioni di esistenza (es. assenza di null), con l'AF definisci le cose che non variano degli stessi attributi usando i metodi puri di quella classe (osservatori).
+
+JML di strutture dati:
+   Ricordati sempre di esplicitare che tutti gli elementi prima presenti lo sono ancora, nel caso di insert, e che restano invariate anche le relazioni tra le varie entità della struttura. Gli elementi della struttura non sono null (salvo specifiche)
+
+JML e @signals:
+   A seguito di una signals di un metodo modificatore va sempre specificato che la struttura iniziale (rep) non è cambiata.
+
+JML di implementazione parziale:
+   Scrivi fin dove puoi il JML puro, poi usi i commenti (* comment *) && (* ... *) ... oppure definisci funzioni e le commenti, potrebbero servirti per pre/postcondizioni di altri metodi JML (vedi TdE 20/07/2018).
+
+UML - Associazioni e aggregazioni
+   Le associazioni (linea o freccia, se unidirezionale) indicano relazioni tra classi. Invece le aggregazioni (rombo) indicano che una parte è in relazione con un oggetto (part-of).
+
+Threads:
+   Dopo una wait ci vuole sempre una catch InterruptedException e, per risvegliare il processo, una notifyAll.
+   In un blocco synchronized occorre chiamare wait() e notifyAll() sull'oggetto che costituisce il lock, non su this.
+   Se un metodo è synchronized su this e l'altro su this.attributo, eseguiranno insieme.
+
+Casting, polimorfismo e dynamic method dispatch:
+    La scelta del metodo da invocare (signature) è effettuata a tempo di compilazione, guardando solo al tipo statico.
+
+
+Matrice - attraversamento delle celle & altro            18/02/2019 Es1a
+Chiamate ricorsive e iterazioni in strutture             25/01/2019 Es1a contains()
+Liskov, precondizione + postcondizione indebolite        25/01/2019 Es1c
+Sequence diagram + UML                                   12/09/2019 Es3a-b
+Proprietà che non possono essere espresse tramite RI     20/07/2018 Es1a
+Estensione+UML+DesignPatterns                            20/07/2018 Es3
+noDuplicate + noChange JML                               20/07/2018 Es1a
+JML crucipuzzle                                          09/02/2018 Es1
